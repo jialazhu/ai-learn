@@ -4,3 +4,6 @@
 *.xml
 *.pt
 *.txt
+*.pth
+*.json
+*.safetensors
