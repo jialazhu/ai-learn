@@ -1,3 +1,5 @@
+from typing import List, Dict, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -216,3 +218,47 @@ json = {
 }
 
 
+class NERModel:
+  """命名实体识别模型"""
+
+  def __init__(self, model_type: str = 'bilstm_crf'):
+    self.model_type = model_type
+    self.model = None
+    self.word_to_ix = {}
+    self.tag_to_ix = {}
+    self.ix_to_tag = {}
+
+    # 标签集合
+    self.labels = ['O', 'B-PRODUCT', 'I-PRODUCT', 'B-ORDER', 'I-ORDER',
+                   'B-TIME', 'I-TIME', 'B-LOCATION', 'I-LOCATION',
+                   'B-PRICE', 'I-PRICE']
+
+    for i, label in enumerate(self.labels):
+      self.tag_to_ix[label] = i
+      self.ix_to_tag[i] = label
+
+  def _prepare_data(self, data: List[Dict]) -> List[Tuple[List[str], List[str]]]:
+    """准备训练数据"""
+    training_data = []
+
+    for item in data:
+      text = item['text']
+      entities = item['entities']
+
+      # 字符级别标注
+      chars = list(text)
+      labels = ['O'] * len(chars)
+
+      # 标注实体
+      for entity in entities:
+        start, end = entity['start'], entity['end']
+        label = entity['label']
+
+        if start < len(labels):
+          labels[start] = f'B-{label}'
+          for i in range(start + 1, min(end, len(labels))):
+            labels[i] = f'I-{label}'
+
+      training_data.append((chars, labels))
+
+    return training_data
