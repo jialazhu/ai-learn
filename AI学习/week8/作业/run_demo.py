@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import json
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from intelligent_qa_system import IntelligentQASystem, DataGenerator
+# from intelligent_qa_system import IntelligentQASystem, DataGenerator
+from 作业 import IntelligentQASystem
 
 def simple_demo():
     """简单演示"""
@@ -28,11 +29,11 @@ def simple_demo():
     
     # 测试问题
     test_questions = [
-        "我的订单什么时候到？",
+        "我可以查看物流信息吗？",
         "可以退货吗？",
-        "怎么查看我的订单？",
+        "我可以修改订单地址吗？",
         "现在有优惠吗？",
-        "运费多少钱？"
+        "可以修改颜色吗？"
     ]
     
     print("\n📋 测试问题:")
@@ -55,13 +56,14 @@ def interactive_demo():
     print()
     
     # 初始化系统（使用完整数据）
-    data_generator = DataGenerator()
-    train_data = data_generator.generate_training_data(20)
-    faq_data = data_generator.get_faq_data()
+    with open("dataSet.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    train_data = data["questions"]
+    faq_data = data["faq"]
     
     qa_system = IntelligentQASystem()
     qa_system.load_faq(faq_data)
-    qa_system.train_models(train_data)
+    qa_system.train_model(train_data)
     
     while True:
         try:
@@ -98,7 +100,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="智能问答系统演示")
-    parser.add_argument("--mode", choices=["simple", "interactive"], default="simple",
+    parser.add_argument("--mode", choices=["simple", "interactive"], default="interactive",
                        help="演示模式: simple(简单演示) 或 interactive(交互模式)")
     
     args = parser.parse_args()
