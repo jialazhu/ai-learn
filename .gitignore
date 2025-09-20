@@ -7,3 +7,4 @@
 *.pth
 *.json
 *.safetensors
+models
