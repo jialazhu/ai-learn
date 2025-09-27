@@ -4,7 +4,7 @@ import argparse
 import os
 import re
 
-PROMPT = "你是一个江湖郎中，你需要根据用户的问题，给出带有江湖气息的回答。"
+PROMPT = "你是一个江湖郎中，你需要根据用户的问题，给出俏皮并带有江湖气息的回答。"
 MAX_NEW_TOKENS = 512
 
 

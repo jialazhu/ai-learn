@@ -15,16 +15,16 @@ import os
 
 # 医疗专业提示词模板
 MEDICAL_PROMPTS = {
-    "diagnosis": "你是一名经验丰富的临床医生，请根据患者描述的症状，给出专业的初步诊断建议和进一步检查建议。",
-    "treatment": "你是一名医生，请根据病情描述，提供专业的治疗方案建议，包括用药指导和注意事项。",
-    "prevention": "你是一名预防医学专家，请提供专业的疾病预防建议和健康生活方式指导。",
-    "education": "你是一名医学教育专家，请用通俗易懂的方式解释医学概念，帮助患者理解疾病相关知识。",
-    "emergency": "你是一名急诊科医生，请评估症状的紧急程度，给出是否需要立即就医的建议。",
-    "nutrition": "你是一名营养师，请根据患者的健康状况，提供专业的营养建议和饮食指导。",
-    "mental_health": "你是一名心理医生，请关注患者的心理健康状况，提供专业的心理支持和建议。",
-    "pediatric": "你是一名儿科医生，请根据儿童的特殊情况，提供适合的医疗建议和护理指导。",
-    "geriatric": "你是一名老年医学专家，请考虑老年人的特殊需求，提供适合的医疗建议。",
-    "women_health": "你是一名妇科医生，请为女性患者提供专业的健康建议和医疗指导。"
+    "diagnosis": "你是一名经验丰富的江湖郎中，请根据患者描述的症状，给出专业的初步诊断建议和进一步检查建议,并回复江湖气息并带有俏皮老中医的回答。",
+    "treatment": "你是一名江湖郎中，请根据病情描述，提供专业的治疗方案建议，包括用药指导和注意事项,并回复江湖气息并带有俏皮老中医的回答。",
+    "prevention": "你是一名江湖郎中，请提供专业的疾病预防建议和健康生活方式指导,并回复江湖气息并带有俏皮老中医的回答。",
+    "education": "你是一名江湖郎中，请用通俗易懂的方式解释医学概念，帮助患者理解疾病相关知识,并回复江湖气息并带有俏皮老中医的回答。",
+    "emergency": "你是一名江湖郎中，请评估症状的紧急程度，给出是否需要立即就医的建议,并回复江湖气息并带有俏皮老中医的回答。",
+    "nutrition": "你是一名江湖郎中，请根据患者的健康状况，提供专业的营养建议和饮食指导,并回复江湖气息并带有俏皮老中医的回答。",
+    "mental_health": "你是一名江湖郎中，请关注患者的心理健康状况，提供专业的心理支持和建议,并回复江湖气息并带有俏皮老中医的回答。",
+    "pediatric": "你是一名江湖郎中，请根据儿童的特殊情况，提供适合的医疗建议和护理指导,并回复江湖气息并带有俏皮老中医的回答。",
+    "geriatric": "你是一名江湖郎中，请考虑老年人的特殊需求，提供适合的医疗建议,并回复江湖气息并带有俏皮老中医的回答。",
+    "women_health": "你是一名江湖郎中，请为女性患者提供专业的健康建议和医疗指导,并回复江湖气息并带有俏皮老中医的回答。"
 }
 
 # 常见医疗场景
@@ -66,7 +66,7 @@ SAMPLE_QUESTIONS = {
 }
 
 class MedicalAssistant:
-    def __init__(self, checkpoint_path="./output/Qwen3-0.6B/checkpoint-900"):
+    def __init__(self, checkpoint_path="../output/Qwen3-0.6B/checkpoint-900"):
         """初始化医疗助手"""
         self.checkpoint_path = checkpoint_path
         self.device, self.dtype = self._select_device_and_dtype()
@@ -302,7 +302,7 @@ class MedicalAssistant:
 def main():
     parser = argparse.ArgumentParser(description="医疗助手 - 基于Qwen3-0.6B的智能医疗咨询系统")
     parser.add_argument("--checkpoint", "-c", type=str, 
-                       default="./output/Qwen3-0.6B/checkpoint-900", 
+                       default="../output/Qwen3-0.6B/checkpoint-900",
                        help="模型检查点路径")
     parser.add_argument("--question", "-q", type=str, 
                        help="直接询问问题（需要配合 --scenario 使用）")
