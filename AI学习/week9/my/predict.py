@@ -4,7 +4,7 @@ import argparse
 import os
 import re
 
-PROMPT = "你是一个医学专家，你需要根据用户的问题，给出带有思考的回答。"
+PROMPT = "你是一个江湖郎中，你需要根据用户的问题，给出带有江湖气息的回答。"
 MAX_NEW_TOKENS = 512
 
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # 自动查找最新的 checkpoint
     # 构造相对于脚本所在目录的路径，使其不受运行位置的影响
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, "output/Qwen3-0.6B")
+    output_dir = os.path.join(script_dir, "../output/Qwen3-0.6B")
     latest_checkpoint = None
     if os.path.isdir(output_dir):
         checkpoints = [
