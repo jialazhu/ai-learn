@@ -5,14 +5,13 @@ from datasets import Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer, DataCollatorForSeq2Seq
 import os
 import swanlab
-swanlab.init(mode="local")
 
 os.environ["SWANLAB_PROJECT"]="qwen3-sft-medical"
 PROMPT = "你是一个医学专家，你需要根据用户的问题，给出带有思考的回答。"
 MAX_LENGTH = 2048
-
+# swanlab.login(api_key=["DU4AosvoeVYGiuclQpk62"])
 swanlab.config.update({
-    "model": "Qwen/Qwen3-1.7B",
+    "model": "Qwen/Qwen3-0.6B",
     "prompt": PROMPT,
     "data_max_length": MAX_LENGTH,
     })
@@ -116,7 +115,7 @@ def predict(messages, model, tokenizer, device):
 
 
 # 本地模型目录（已下载）
-model_dir = "../models/Qwen/Qwen3-1___7B"
+model_dir = "../models/Qwen/Qwen3-0___6B"
 
 # Transformers加载模型权重（本地）
 device, load_dtype = select_device_and_dtype()
@@ -156,7 +155,7 @@ eval_dataset = eval_ds.map(process_func, remove_columns=eval_ds.column_names)
 collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True, label_pad_token_id=-100)
 
 args = TrainingArguments(
-    output_dir="../output/Qwen3-1.7B",
+    output_dir="../output/Qwen3-0.6B",
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
     gradient_accumulation_steps=4,
@@ -164,12 +163,12 @@ args = TrainingArguments(
     eval_steps=100,
     logging_steps=10,
     num_train_epochs=2,
-    save_steps=400,
+    save_steps=100,
     learning_rate=1e-4,
     save_on_each_node=True,
     gradient_checkpointing=True,
     report_to="swanlab",
-    run_name="qwen3-1.7B",
+    run_name="qwen3-0.6B",
 )
 
 trainer = Trainer(
