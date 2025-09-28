@@ -2,7 +2,6 @@ from modelscope import snapshot_download, AutoTokenizer
 from transformers import AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForSeq2Seq
 import torch
 import os
-from mlx_lm import load , generate
 
 # 获取脚本所在目录，并创建模型缓存路径
 script_path = os.path.dirname(os.path.abspath(__file__))

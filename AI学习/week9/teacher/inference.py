@@ -1,6 +1,5 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from mlx_lm import load, generate
 def predict(messages, model, tokenizer):
     if torch.backends.mps.is_available():
         device = "mps"
