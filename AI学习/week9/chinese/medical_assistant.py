@@ -56,8 +56,8 @@ SAMPLE_QUESTIONS = {
 }
 
 class MedicalAssistant:
-    def __init__(self, checkpoint_path="../output/Qwen3-0.6B/checkpoint-900"):
-        """初始化医疗助手"""
+    def __init__(self, checkpoint_path="../output/Qwen3-0.6B-chinese/checkpoint-1350"):
+        """初始化问答小助手"""
         self.checkpoint_path = checkpoint_path
         self.device, self.dtype = self._select_device_and_dtype()
         self.model = None
@@ -79,7 +79,7 @@ class MedicalAssistant:
     
     def load_model(self):
         """加载模型和分词器"""
-        print("正在加载医疗助手模型...")
+        print("正在加载问答小助手模型...")
         
         # 检查路径是否存在
         if not os.path.exists(self.checkpoint_path):
@@ -129,20 +129,20 @@ class MedicalAssistant:
         response = self.tokenizer.batch_decode(new_tokens, skip_special_tokens=True)[0]
         return response
     
-    def ask_question(self, question, scenario_type="diagnosis", max_tokens=512):
+    def ask_question(self, question, scenario_choice="中华文化", sub_choice="中国神话", max_tokens=512):
         """询问医疗问题"""
-        if scenario_type not in MEDICAL_PROMPTS:
-            scenario_type = "diagnosis"
-        
+        if scenario_choice not in MEDICAL_PROMPTS:
+            scenario_type = "中华文化"
+        content = f"{MEDICAL_PROMPTS[scenario_choice]},研究{sub_choice},你需要根据用户的问题，给出答案。"
         messages = [
-            {"role": "system", "content": MEDICAL_PROMPTS[scenario_type]},
+            {"role": "system", "content": content},
             {"role": "user", "content": question}
         ]
         
         # 记录对话历史
         self.conversation_history.append({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "scenario": scenario_type,
+            "scenario": scenario_choice,
             "question": question,
             "response": None
         })
@@ -156,16 +156,23 @@ class MedicalAssistant:
     
     def show_scenarios(self):
         """显示可用的医疗场景"""
-        print("\n🏥 医疗助手 - 可用场景:")
+        print("\n🏥 问答小助手 - 可用场景:")
         print("=" * 50)
-        for key, value in MEDICAL_SCENARIOS.items():
-            print(f"{key:2}. {value}")
+        for key, _ in MEDICAL_PROMPTS.items():
+            print(f"{key:2}")
+        print("=" * 50)
+    def show_sub_scenarios(self, scenario_type):
+        """显示可用的子场景"""
+        print("\n🏥 问答小助手 - 可用子场景:")
+        print("=" * 50)
+        for value in list(MEDICAL_SCENARIOS[scenario_type]):
+            print(f"{value}")
         print("=" * 50)
     
     def show_sample_questions(self, scenario_type):
         """显示示例问题"""
         if scenario_type in SAMPLE_QUESTIONS:
-            print(f"\n📋 {MEDICAL_SCENARIOS.get(scenario_type, '医疗咨询')} - 示例问题:")
+            print(f"\n📋 {MEDICAL_SCENARIOS.get(scenario_type, '中华文化')} - 示例问题:")
             print("-" * 40)
             for i, question in enumerate(SAMPLE_QUESTIONS[scenario_type], 1):
                 print(f"{i}. {question}")
@@ -173,30 +180,43 @@ class MedicalAssistant:
     
     def interactive_mode(self):
         """交互模式"""
-        print("\n🤖 医疗助手已启动！")
+        print("\n🤖 问答小助手已启动！")
         print("输入 'help' 查看帮助，输入 'quit' 退出")
-        
+
+        keep = False
+        scenario_choice = None
+        sub_choice = None
         while True:
             try:
-                # 显示场景选择
-                self.show_scenarios()
-                
-                # 选择场景
-                scenario_choice = input("\n请选择医疗场景 (1-10): ").strip()
-                if scenario_choice == 'quit':
-                    break
-                elif scenario_choice == 'help':
-                    self.show_help()
-                    continue
-                # elif scenario_choice not in MEDICAL_SCENARIOS:
-                #     print("❌ 无效选择，请重新输入")
-                #     continue
-                
-                # 获取场景类型
-                scenario_type = list(MEDICAL_PROMPTS.keys())[int(scenario_choice) - 1]
+                if not keep:
+                    # 显示场景选择
+                    self.show_scenarios()
+
+                    # 选择场景
+                    scenario_choice = input("\n请选择问答场景: ").strip()
+                    if scenario_choice == 'quit':
+                        break
+                    elif scenario_choice == 'help':
+                        self.show_help()
+                        continue
+                    elif scenario_choice not in list(MEDICAL_PROMPTS.keys()):
+                        print("❌ 无效选择，请重新输入")
+                        continue
+
+                    self.show_sub_scenarios(scenario_choice)
+
+                    sub_choice = input(f"\n请选择{scenario_choice}子场景: ").strip()
+                    if sub_choice == 'quit':
+                        break
+                    elif sub_choice == 'help':
+                        self.show_help()
+                        continue
+                    elif sub_choice not in list(MEDICAL_SCENARIOS[scenario_choice]):
+                        print("❌ 无效选择，请重新输入")
+                        continue
                 
                 # 显示示例问题
-                self.show_sample_questions(scenario_type)
+                self.show_sample_questions(sub_choice)
                 
                 # 获取用户问题
                 # question = input(f"\n请输入您的{MEDICAL_SCENARIOS[scenario_choice]}问题: ").strip()
@@ -209,24 +229,34 @@ class MedicalAssistant:
                 print("\n🔄 正在分析您的问题...")
                 start_time = time.time()
                 
-                response = self.ask_question(question, scenario_type)
+                response = self.ask_question(question, scenario_choice,sub_choice)
                 
                 end_time = time.time()
                 
                 # 显示回答
                 elapsed_time = end_time - start_time
-                print(f"\n💡 医疗助手回答 (耗时: {elapsed_time:.2f}秒):")
+                print(f"\n💡 问答小助手回答 (耗时: {elapsed_time:.2f}秒):")
                 print("=" * 60)
                 print(response)
                 print("=" * 60)
                 
                 # 询问是否继续
-                continue_choice = input("\n是否继续咨询？(y/n): ").strip().lower()
-                if continue_choice in ['n', 'no', '否']:
+                continue_choice = input("\n是否继续咨询？(y/n),如果要重新选择场景请输入 again : ").strip().lower()
+                if continue_choice == 'again':
+                    keep = False
+                    scenario_choice = None
+                    sub_choice = None
+                    continue
+                elif continue_choice in ['n', 'no', '否']:
+                    keep = False
+                    scenario_choice = None
+                    sub_choice = None
                     break
+                else:
+                    keep = True
                     
             except KeyboardInterrupt:
-                print("\n\n👋 感谢使用医疗助手！")
+                print("\n\n👋 感谢使用问答小助手！")
                 break
             except Exception as e:
                 print(f"❌ 发生错误: {str(e)}")
@@ -234,7 +264,7 @@ class MedicalAssistant:
     
     def show_help(self):
         """显示帮助信息"""
-        print("\n📖 医疗助手使用帮助:")
+        print("\n📖 问答小助手使用帮助:")
         print("=" * 50)
         print("1. 选择医疗场景 (1-10)")
         print("2. 输入您的医疗问题")
@@ -301,16 +331,16 @@ def load_category(origin_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="医疗助手 - 基于Qwen3-0.6B的智能医疗咨询系统")
+    parser = argparse.ArgumentParser(description="问答小助手 - 基于Qwen3-0.6B的智能百科咨询系统")
     parser.add_argument("--checkpoint", "-c", type=str, 
-                       default="../output/Qwen3-0.6B-chinese/checkpoint-600",
+                       default="../output/Qwen3-0.6B-chinese/checkpoint-1350",
                        help="模型检查点路径")
     parser.add_argument("--question", "-q", type=str, 
                        help="直接询问问题（需要配合 --scenario 使用）")
     parser.add_argument("--scenario", "-s", type=str, 
                        default="diagnosis", 
                        choices=list(MEDICAL_PROMPTS.keys()),
-                       help="医疗场景类型")
+                       help="百科咨询场景类型")
     parser.add_argument("--max-tokens", "-m", type=int, 
                        default=512, 
                        help="最大生成token数")
@@ -321,7 +351,7 @@ def main():
     
     args = parser.parse_args()
     load_category('../dataSets/chinese-category.jsonl')
-    # 创建医疗助手实例
+    # 创建问答小助手实例
     assistant = MedicalAssistant(args.checkpoint)
     
     # 加载模型
@@ -332,7 +362,7 @@ def main():
         assistant.batch_questions(args.batch)
     elif args.question:
         # 单次问答模式
-        print(f"🤖 医疗助手回答:")
+        print(f"🤖 问答小助手回答:")
         print("=" * 50)
         response = assistant.ask_question(args.question, args.scenario, args.max_tokens)
         print(response)
