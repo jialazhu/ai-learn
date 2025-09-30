@@ -13,7 +13,7 @@ os.environ["SWANLAB_PROJECT"]="qwen3-sft-medical"
 MAX_LENGTH = 2048
 
 swanlab.config.update({
-    "model": "Qwen/Qwen3-0.6B-chinese-mac",
+    "model": "Qwen/Qwen3-0.6B-chinese-mac-v1",
     "prompt": "",
     "data_max_length": MAX_LENGTH,
     })
@@ -104,7 +104,7 @@ eval_ds = Dataset.from_pandas(eval_df)
 eval_dataset = eval_ds.map(process_func, remove_columns=eval_ds.column_names)
 
 args = TrainingArguments(
-    output_dir="../output/Qwen3-0.6B-chinese",
+    output_dir="../output/Qwen3-0.6B-chinese-v1",
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
     gradient_accumulation_steps=4,
@@ -113,11 +113,11 @@ args = TrainingArguments(
     logging_steps=10,
     num_train_epochs=2,
     save_steps=100,
-    learning_rate=1e-4,
+    learning_rate=1e-5,
     save_on_each_node=True,
     gradient_checkpointing=True,
     report_to="swanlab",
-    run_name="qwen3-0.6B-chinese-mac",
+    run_name="qwen3-0.6B-chinese-mac-v1",
 )
 
 trainer = Trainer(

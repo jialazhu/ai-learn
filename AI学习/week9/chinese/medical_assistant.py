@@ -333,7 +333,7 @@ def load_category(origin_path):
 def main():
     parser = argparse.ArgumentParser(description="问答小助手 - 基于Qwen3-0.6B的智能百科咨询系统")
     parser.add_argument("--checkpoint", "-c", type=str, 
-                       default="../output/Qwen3-0.6B-chinese/checkpoint-1350",
+                       default="../output/Qwen3-0.6B-chinese-v1/checkpoint-1350",
                        help="模型检查点路径")
     parser.add_argument("--question", "-q", type=str, 
                        help="直接询问问题（需要配合 --scenario 使用）")
