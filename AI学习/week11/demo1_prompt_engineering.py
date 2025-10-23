@@ -25,8 +25,8 @@ try:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        torch_dtype=torch.float32,  # 使用半精度以减少显存占用
-        device_map="cpu"  # 自动将模型分配到可用设备（GPU优先）
+        torch_dtype=torch.float16,  # 使用半精度以减少显存占用
+        device_map="auto"  # 自动将模型分配到可用设备（GPU优先）
     )
     print(f"成功加载模型: {model_name}")
 except Exception as e:
