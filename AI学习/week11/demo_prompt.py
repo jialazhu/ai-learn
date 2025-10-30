@@ -24,7 +24,7 @@ model_name = "Qwen/Qwen1.5-1.8B-Chat"
 try:
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True
-                                                 , torch_dtype= torch.float32, device_map="cpu")
+                                                 , torch_dtype= torch.float16, device_map="cuda")
 except Exception as e:
     print(f"模型加载失败: {e}")
     exit()
@@ -35,7 +35,7 @@ pipe = pipeline(
     model=model,
     tokenizer=tokenizer,
     pad_token_id = tokenizer.eos_token_id, # 设置pad_token 为eos_token 处理批处理长度不一致情况
-    return_full_text=True # 返回完整的文本
+    return_full_text=False # 返回完整的文本
 )
 
 problem = """
@@ -64,7 +64,7 @@ print("\n--------零样本提示-----------\n")
 try:
     result_zero_shot = pipe(
         message,
-        max_new_tokens= 256,
+        max_new_tokens= 400,
         temperature=0.2,
         do_sample=True,
         repetition_penalty=1.5,
@@ -101,7 +101,7 @@ print("\n--------少样本提示-----------\n")
 try:
     result_few_shot = pipe(
         message,
-        max_new_tokens= 256,
+        max_new_tokens= 400,
         temperature=0.2,
         do_sample=True,
         repetition_penalty=1.5,
@@ -134,7 +134,7 @@ print("\n--------引导式逆向推理-----------\n")
 try:
     result_guide = pipe(
         message,
-        max_new_tokens= 256,
+        max_new_tokens= 400,
         temperature=0.2,
         do_sample=True,
         repetition_penalty=1.5,
@@ -162,7 +162,7 @@ print("\n--------直接给出正确答案-----------\n")
 try:
     result_direct = pipe(
         message,
-        max_new_tokens= 256,
+        max_new_tokens= 400,
         temperature=0.2,
         do_sample=True,
         repetition_penalty=1.5,
