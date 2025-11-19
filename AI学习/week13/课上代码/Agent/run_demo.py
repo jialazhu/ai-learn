@@ -286,13 +286,14 @@ def demo_autonomous_game() -> None:
         "- 坐标范围是0-14（15x15棋盘）\n"
         "\n"
         "你的任务流程（必须严格按照此流程）：\n"
-        "1. 查看当前棋盘状态：使用getBoardState工具\n"
-        "2. 评估当前局面：使用evaluatePosition工具\n"
-        "3. 获取走法建议：使用suggestMoves工具（输入'5'获取5个建议）\n"
-        "4. 执行走子：使用makeMove工具执行走子，输入格式为'行,列'（例如'7,7'）\n"
-        "5. 检查游戏状态：走子后必须立即使用getBoardState检查\n"
-        "6. 验证是否获胜：检查是否有连续5颗同色棋子（横、竖、斜任一方向）\n"
-        "7. 继续对局：如果游戏未结束，切换玩家（黑→白，白→黑），重复步骤1-6\n"
+        "1. AI深度思考：使用aiThinkAndDecide工具进行深度分析，了解当前局面和最佳走法\n"
+        "2. 查看当前棋盘状态：使用getBoardState工具确认棋盘状况\n"
+        "3. 执行走子：基于AI思考结果，使用makeMove工具执行最佳走子，输入格式为'行,列'（例如'7,7'）\n"
+        "4. 检查游戏状态：走子后必须立即使用getBoardState检查\n"
+        "5. 验证是否获胜：检查是否有连续5颗同色棋子（横、竖、斜任一方向）\n"
+        "6. 继续对局：如果游戏未结束，切换玩家（黑→白，白→黑），重复步骤1-5\n"
+        "\n"
+        "重要：每次轮到你时，都必须先使用aiThinkAndDecide工具展示完整的思考过程！"
         "\n"
         "重要规则：\n"
         "- 每一步走子后，棋盘上的棋子总数应该增加1（例如：0→1→2→3→4...）\n"
@@ -341,25 +342,44 @@ def demo_autonomous_game() -> None:
             else:
                 # 后续轮次：继续下棋
                 current_task = (
-                    f"继续下棋。当前棋盘上有 {current_piece_count} 个棋子。\n"
-                    f"请查看棋盘状态，然后作为当前玩家（{'黑棋' if board.current_player.value == 1 else '白棋'}）继续走子。\n"
-                    f"记住：只有当某一方形成连续5颗同色棋子时，游戏才会结束。\n"
-                    f"当前没有形成五连，必须继续下棋。\n"
-                    f"1. 使用getBoardState查看当前棋盘状态\n"
-                    f"2. 使用makeMove执行走子\n"
-                    f"3. 检查是否形成五连，如果没有则继续"
+                    f"🧠 AI深度思考并走子。当前棋盘上有 {current_piece_count} 个棋子。\n"
+                    f"作为当前玩家（{'黑棋' if board.current_player.value == 1 else '白棋'}），请进行深度思考分析。\n\n"
+                    f"【重要】必须按照以下流程：\n"
+                    f"1. 🧠 使用aiThinkAndDecide工具进行完整的深度思考分析\n"
+                    f"2. 📊 使用getBoardState查看当前棋盘状态确认\n"
+                    f"3. 🎯 基于思考结果使用makeMove执行最佳走子\n"
+                    f"4. ✅ 检查是否形成五连获胜\n\n"
+                    f"请展示完整的AI思考过程，让用户看到你的分析逻辑！"
                 )
             
             result = agent.invoke({"input": current_task})
             
-            # 显示走子过程
+            # 显示AI思考过程和走子
             new_moves = 0
             round_has_output = False
+            thinking_shown = False
+
             if "intermediate_steps" in result:
                 for action, observation in result["intermediate_steps"]:
                     action_tool = getattr(action, "tool", None) or str(action)
                     obs_str = str(observation)
-                    if "makeMove" in str(action_tool) or ("落子成功" in obs_str and "位置" in obs_str):
+
+                    # 显示AI思考过程
+                    if "aiThinkAndDecide" in str(action_tool) and not thinking_shown:
+                        print("│ 🧠 AI思考分析:                           │")
+                        # 简化显示思考结果的关键部分
+                        if "推荐走法" in obs_str:
+                            lines = obs_str.split('\n')
+                            for line in lines:
+                                if "推荐走法" in line or "决策原因" in line or "置信度" in line:
+                                    if len(line) > 40:
+                                        line = line[:37] + "..."
+                                    print(f"│   {line:<37} │")
+                        thinking_shown = True
+                        round_has_output = True
+
+                    # 显示走子结果
+                    elif "makeMove" in str(action_tool) or ("落子成功" in obs_str and "位置" in obs_str):
                         symbol, pos = _extract_move_info_from_observation(obs_str)
                         if symbol and pos:
                             board_after = get_current_board()
@@ -585,23 +605,42 @@ def demo_play_with_human() -> None:
             print("└───────────────────────────────────────────┘")
             
             task_ai = (
-                "当前轮到白棋（你）。"
-                "请查看棋盘状态，评估局面，获取走法建议，然后走出最佳一步。"
-                "要确保你的走法能够应对对手的威胁，并创造自己的机会。"
-                "完成走子后，直接给出最终答案。"
+                "🧠 AI深度思考并应对。当前轮到白棋（你）。\n\n"
+                "请严格按照以下流程：\n"
+                "1. 使用aiThinkAndDecide工具进行深度思考分析\n"
+                "2. 基于分析结果走出最佳一步\n"
+                "3. 应对人类对手的威胁，创造自己的机会\n\n"
+                "请展示完整的思考过程，然后走子。"
             )
             
             try:
+                print("┌─ AI思考过程 ─────────────────────────────┐")
                 result = agent.invoke({"input": task_ai})
                 output = result.get("output", "")
-                
+
+                # 显示AI思考过程摘要
+                if "intermediate_steps" in result:
+                    for action, observation in result["intermediate_steps"]:
+                        action_tool = getattr(action, "tool", None) or str(action)
+                        if "aiThinkAndDecide" in str(action_tool):
+                            obs_str = str(observation)
+                            # 提取关键思考信息
+                            if "推荐走法" in obs_str:
+                                lines = obs_str.split('\n')
+                                for line in lines:
+                                    if any(keyword in line for keyword in ["推荐走法", "决策原因", "置信度"]):
+                                        print(f"│ {line:<44} │")
+                            break
+
+                print("└───────────────────────────────────────────┘")
+
                 # 提取AI走子信息
                 import re
                 move_match = re.search(r"\((\d+),\s*(\d+)\)", output)
-                
+
                 board_after = get_current_board()
                 if len(board_after.move_history) > len(board.move_history):
-                    # 成功走子（）
+                    # 成功走子
                     last_move = board_after.move_history[-1]
                     print(f"✓ AI(○) 已落子: ({last_move[0]}, {last_move[1]})\n")
                 else:
@@ -610,6 +649,162 @@ def demo_play_with_human() -> None:
             except Exception as exc:
                 print(f"✗ AI走子失败: {exc}\n")
     
+    # 如果达到最大轮次限制
+    if round_num >= max_rounds:
+        print(f"\n⚠ 已达到最大轮次限制（{max_rounds}轮）")
+        board = get_current_board()
+        if len(board.move_history) > 0:
+            last_move = board.move_history[-1]
+            _print_mini_board_from_matrix(board.board, center=last_move, view_size=10)
+
+
+# ===================== 演示：人类 vs 人类 =====================
+
+def demo_play_with_player() -> None:
+    """演示人类对人类对局（PvP模式）"""
+    from tools.gomoku_game import get_current_board
+
+    _print_header("五子棋 人类 vs 人类 对局")
+
+    # 初始化游戏
+    _print_step(1, "初始化", "⚙")
+
+    # 直接创建游戏，不需要Agent
+    from tools.gomoku_game import init_game
+    try:
+        init_game(15)
+        _print_step(1, "游戏就绪", "✓")
+    except Exception as exc:
+        _print_step(1, f"初始化失败: {exc}", "✗")
+        return
+
+    # 对弈循环
+    round_num = 0
+    max_rounds = 150  # 最多150轮（300步）
+
+    while round_num < max_rounds:
+        round_num += 1
+        board = get_current_board()
+
+        # 检查是否已结束
+        piece_count = len(board.move_history)
+        if piece_count > 0:
+            last_move = board.move_history[-1]
+            has_win, winner_color = has_five_in_a_row(
+                board_matrix=board.board,
+                last_move=last_move,
+                exact_five=False,
+                forbid_black_overline=False
+            )
+            if has_win and winner_color > 0:
+                winner = "黑棋" if winner_color == 1 else "白棋"
+                player_name = "玩家1(●)" if winner == "黑棋" else "玩家2(○)"
+                _print_step(2, "对局完成", "✓")
+                print("\n╔══════════════════════════════════════╗")
+                symbol = "●" if winner == "黑棋" else "○"
+                print(f"║         {symbol} {player_name}获胜！                 ║")
+                print("╚══════════════════════════════════════╝")
+                _print_mini_board_from_matrix(board.board, center=last_move, view_size=10)
+                break
+
+        # 检查当前玩家
+        current_player = board.current_player
+        if current_player.value == 1:  # 黑棋（玩家1）
+            player_name = "玩家1"
+            player_symbol = "●"
+        else:  # 白棋（玩家2）
+            player_name = "玩家2"
+            player_symbol = "○"
+
+        # 显示当前棋盘
+        if piece_count > 0:
+            last_move = board.move_history[-1]
+            _print_mini_board_from_matrix(board.board, center=last_move, view_size=10)
+        else:
+            print("┌─ 空棋盘 ─────────────────────────────┐")
+            print("│ 游戏开始，黑棋先行！                      │")
+            print("└───────────────────────────────────────────┘")
+
+        print(f"\n┌─ 第{round_num}轮：{player_name}({player_symbol}) 走子 ────────────────────┐")
+        print("│ 请输入走子位置，格式：行,列 (例如: 7,7)      │")
+        print("│ 输入 'hint' 获取建议                        │")
+        print("│ 输入 'quit' 退出                            │")
+        print("└───────────────────────────────────────────┘")
+
+        # 获取玩家输入
+        try:
+            user_input = input(f"👉 {player_name}请输入: ").strip()
+
+            if user_input.lower() == 'quit':
+                print("游戏已退出")
+                return
+
+            if user_input.lower() == 'hint':
+                # 提供走子建议
+                try:
+                    from tools.evaluation import suggest_moves
+                    suggestions = suggest_moves(3)
+                    print(f"💡 建议走法: {suggestions}")
+                    round_num -= 1  # 重试本轮
+                    continue
+                except Exception as exc:
+                    print(f"❌ 获取建议失败: {exc}")
+                    round_num -= 1
+                    continue
+
+            # 解析输入
+            if ',' in user_input:
+                parts = user_input.split(',')
+            else:
+                parts = user_input.split()
+
+            if len(parts) < 2:
+                print("❌ 输入格式错误，请使用 '行,列' 格式 (例如: 7,7)")
+                round_num -= 1  # 重试本轮
+                continue
+
+            row = int(parts[0].strip())
+            col = int(parts[1].strip())
+
+            # 验证坐标范围
+            if not (0 <= row < 15 and 0 <= col < 15):
+                print("❌ 坐标超出范围，请输入0-14之间的数字")
+                round_num -= 1
+                continue
+
+            # 执行走子
+            from tools.gomoku_game import make_move
+            move_result = make_move(row, col)
+
+            if "成功" in move_result:
+                print(f"✓ {player_name}({player_symbol}) 已落子: ({row}, {col})")
+
+                # 更新游戏统计（如果有用户登录）
+                try:
+                    from user_manager import user_manager
+                    current_user = user_manager.get_current_user()
+                    if current_user:
+                        print(f"💾 已为用户 '{current_user.username}' 记录游戏进度")
+                except Exception:
+                    pass
+
+            else:
+                print(f"❌ 走子失败：{move_result}")
+                round_num -= 1  # 重试本轮
+                continue
+
+        except ValueError:
+            print("❌ 输入格式错误，请输入数字 (例如: 7,7)")
+            round_num -= 1
+            continue
+        except KeyboardInterrupt:
+            print("\n游戏已退出")
+            return
+        except Exception as exc:
+            print(f"❌ 输入处理错误: {exc}")
+            round_num -= 1
+            continue
+
     # 如果达到最大轮次限制
     if round_num >= max_rounds:
         print(f"\n⚠ 已达到最大轮次限制（{max_rounds}轮）")
@@ -629,15 +824,17 @@ def main() -> None:
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["auto", "human"],
+        choices=["auto", "human", "pvp"],
         default="auto",
-        help="演示模式: auto=AI自主下棋, human=AI与人类对局",
+        help="演示模式: auto=AI自主下棋, human=AI与人类对局, pvp=人类对人类",
     )
-    
+
     args = parser.parse_args()
 
     if args.mode == "auto":
         demo_autonomous_game()
+    elif args.mode == "pvp":
+        demo_play_with_player()
     else:
         demo_play_with_human()
 

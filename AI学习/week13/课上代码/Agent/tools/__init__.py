@@ -16,6 +16,25 @@ from .evaluation import (
     suggest_moves,
     analyze_pattern,
 )
+from .ai_thinking import (
+    ai_think_and_decide,
+    quick_analysis,
+    get_thinking_engine,
+)
+from .user_tools import (
+    parse_register_args,
+    parse_login_args,
+    user_logout,
+    get_user_info,
+    get_current_user,
+    parse_change_password_args,
+    list_all_users,
+    get_session_info,
+    update_game_statistics,
+    user_register,
+    user_login,
+    change_user_password,
+)
 
 __all__ = [
     "init_game",
@@ -30,5 +49,20 @@ __all__ = [
     "evaluate_position",
     "suggest_moves",
     "analyze_pattern",
+    "ai_think_and_decide",
+    "quick_analysis",
+    "get_thinking_engine",
+    "parse_register_args",
+    "parse_login_args",
+    "user_logout",
+    "get_user_info",
+    "get_current_user",
+    "parse_change_password_args",
+    "list_all_users",
+    "get_session_info",
+    "update_game_statistics",
+    "user_register",
+    "user_login",
+    "change_user_password",
 ]
 

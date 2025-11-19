@@ -1,12 +1,6 @@
-"""
-五子棋AI Agent构建模块
-基于LangChain ReAct框架，构建自主下棋的智能体
-"""
 
 from __future__ import annotations
-
 from typing import List
-
 from langchain.tools import Tool
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
@@ -28,20 +22,9 @@ from tools import (
     evaluate_position,
     suggest_moves,
     analyze_pattern,
-    ai_think_and_decide,
-    quick_analysis,
-    parse_register_args,
-    parse_login_args,
-    user_logout,
-    get_user_info,
-    get_current_user,
-    parse_change_password_args,
-    list_all_users,
-    get_session_info,
-    update_game_statistics,
 )
 
-
+# agent 逻辑解析
 def _parse_and_make_move(pos_str: str) -> str:
     """解析位置字符串并执行走子"""
     try:
@@ -51,10 +34,10 @@ def _parse_and_make_move(pos_str: str) -> str:
             parts = pos_str.split(',')
         else:
             parts = pos_str.split()
-            
+
         if len(parts) < 2:
             return "错误：需要提供行和列坐标，格式为 'row,col'，例如 '7,7'"
-            
+
         row = int(parts[0].strip())
         col = int(parts[1].strip())
         return make_move(row, col)
@@ -78,18 +61,17 @@ def _parse_download_args(args: str) -> str:
         else:
             # 只有路径，默认games类型
             parts = [args, 'games']
-            
+
         save_path = parts[0].strip().strip('"\'')
         dataset_type = parts[1].strip().strip('"\'').lower() if len(parts) > 1 else 'games'
-        
+
         # 验证dataset_type
         if dataset_type not in ['games', 'openings']:
             dataset_type = 'games'
-            
+
         return download_gomoku_dataset(save_path, dataset_type)
     except Exception as e:
         return f"下载失败: {e}"
-
 
 def build_tools() -> List[Tool]:
     """构建五子棋Agent的工具集"""
@@ -139,24 +121,6 @@ def build_tools() -> List[Tool]:
                 "返回: 按照优先级排序的走法建议列表，包括位置、原因、优先级评分"
             ),
             func=lambda n: suggest_moves(int(n.strip()) if n.strip().isdigit() else 5),
-        ),
-        Tool(
-            name="aiThinkAndDecide",
-            description=(
-                "AI深度思考并分析决策过程。"
-                "输入: 可选的最大建议数量（默认为5），例如 '5'"
-                "返回: 完整的AI思考分析报告，包括局面分析、威胁检测、机会寻找、策略规划和最终决策"
-            ),
-            func=lambda n: ai_think_and_decide(int(n.strip()) if n.strip().isdigit() else 5),
-        ),
-        Tool(
-            name="quickAnalysis",
-            description=(
-                "快速分析当前局面。"
-                "输入: 任意文本（通常为 'quick' 或 'analysis'）"
-                "返回: 快速局面评估，包括威胁检测、必胜机会等关键信息"
-            ),
-            func=lambda _: quick_analysis(),
         ),
         Tool(
             name="downloadDataset",
@@ -214,119 +178,28 @@ def build_tools() -> List[Tool]:
             ),
             func=lambda _: reset_game(),
         ),
-        Tool(
-            name="userRegister",
-            description=(
-                "注册新用户账号。"
-                "输入: 用户名,密码,邮箱（邮箱可选），格式为 'username,password,email' 或 'username,password'"
-                "示例: 'newuser,password123,user@example.com' 或 'testuser,testpass'"
-                "返回: 注册结果信息"
-            ),
-            func=parse_register_args,
-        ),
-        Tool(
-            name="userLogin",
-            description=(
-                "用户登录。"
-                "输入: 用户名,密码，格式为 'username,password'"
-                "示例: 'admin,password1' 或 'player1,testpass'"
-                "返回: 登录结果信息，包含会话ID"
-            ),
-            func=parse_login_args,
-        ),
-        Tool(
-            name="userLogout",
-            description=(
-                "用户登出。"
-                "输入: 任意文本（通常为 'logout'）"
-                "返回: 登出结果信息"
-            ),
-            func=user_logout,
-        ),
-        Tool(
-            name="getCurrentUser",
-            description=(
-                "获取当前登录用户信息。"
-                "输入: 任意文本（通常为 'current' 或 'me'）"
-                "返回: 当前用户信息的JSON字符串"
-            ),
-            func=get_current_user,
-        ),
-        Tool(
-            name="getUserInfo",
-            description=(
-                "获取指定用户信息。"
-                "输入: 用户名（可选，不提供则获取当前用户）"
-                "示例: 'admin' 或直接传入任意文本获取当前用户"
-                "返回: 用户信息的JSON字符串"
-            ),
-            func=get_user_info,
-        ),
-        Tool(
-            name="changePassword",
-            description=(
-                "修改当前用户密码。"
-                "输入: 旧密码,新密码，格式为 'old_password,new_password'"
-                "示例: 'oldpass,newpass123'"
-                "返回: 密码修改结果信息"
-            ),
-            func=parse_change_password_args,
-        ),
-        Tool(
-            name="listUsers",
-            description=(
-                "列出所有用户（管理员功能）。"
-                "输入: 任意文本（通常为 'list'）"
-                "返回: 所有用户列表的JSON字符串"
-            ),
-            func=list_all_users,
-        ),
-        Tool(
-            name="getSessionInfo",
-            description=(
-                "获取当前会话信息。"
-                "输入: 任意文本（通常为 'session'）"
-                "返回: 会话信息的JSON字符串"
-            ),
-            func=get_session_info,
-        ),
-        Tool(
-            name="updateGameStats",
-            description=(
-                "更新当前用户的游戏统计（通常在游戏结束后调用）。"
-                "输入: 是否获胜，'true'为胜利，'false'为失败"
-                "示例: 'true' 或 'false'"
-                "返回: 统计更新结果信息"
-            ),
-            func=lambda won: update_game_statistics(won.lower() == 'true'),
-        ),
     ]
 
-
 def build_agent() -> AgentExecutor:
-    """构建五子棋AI Agent"""
-    # 兼容部分环境下 Pydantic 类未完全构建的问题
     try:
-        ChatOpenAI.model_rebuild(force=True)
-    except Exception:
-        pass
-    
-    cfg = load_config()
+       ChatOpenAI.model_rebuild(force=True)
+    except Exception as e:
+        print(f"ChatOpenAI模型重构失败: {e}")
 
+    cfg = load_config()
     http_client = httpx.Client(timeout=60.0, http2=False)
 
     llm = ChatOpenAI(
-        api_key=cfg["api_key"],
-        base_url=cfg["base_url"],
-        model=cfg["model"],
-        temperature=0.3,  # 降低温度以保持策略稳定性
+        api_key = cfg["openai_api_key"],
+        base_url = cfg["openai_base_url"],
+        model=cfg["openai_model"],
+        temperature=0.5,
         max_retries=2,
-        http_client=http_client,
+        http_client= http_client
     )
 
     tools = build_tools()
 
-    # 使用标准的 ReAct prompt，必须使用英文关键词以确保 LangChain 正确解析
     prompt = PromptTemplate.from_template(
         """Answer the following questions as best you can. You have access to the following tools:
 
@@ -347,7 +220,7 @@ Final Answer: the final answer to the original input question
 1. Action 和 Action Input 必须分开写，格式如下：
    Action: tool_name
    Action Input: input_value
-   
+
 2. 不要写成 Action: tool_name('input') 这样的格式，这是错误的！
 
 3. 一旦任务完成，立即给出 Final Answer，不要再调用工具
@@ -370,12 +243,6 @@ Final Answer: 游戏已成功初始化为15x15大小，黑棋先行
 - evaluatePosition: 评估当前局面，输入任意文本
 - suggestMoves: 获取最佳走法建议，输入建议数量（如 '5'）
 - downloadDataset: 下载数据集，输入格式为 'path,type'（如 'path.json,games'）
-- userRegister: 注册新用户，输入格式为 'username,password,email'（邮箱可选）
-- userLogin: 用户登录，输入格式为 'username,password'
-- userLogout: 用户登出，输入任意文本
-- getCurrentUser: 获取当前登录用户信息，输入任意文本
-- changePassword: 修改密码，输入格式为 'old_password,new_password'
-- updateGameStats: 更新游戏统计，输入 'true'(胜利)或'false'(失败)
 - 其他工具请参考工具描述
 
 Question: {input}
@@ -383,21 +250,21 @@ Thought: {agent_scratchpad}
         """.strip()
     )
 
-    agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
-    
-    # 自定义解析错误处理函数
+    agent = create_react_agent(llm=llm,tools=tools,prompt=prompt)
+
     def handle_parsing_error(error: Exception) -> str:
         """处理解析错误，返回友好的错误信息"""
         return f"解析错误，请严格按照格式输出。错误: {str(error)[:100]}"
-    
+
     executor = AgentExecutor(
-        agent=agent,
-        tools=tools,
-        verbose=False,  # 关闭详细输出，减少噪音
-        max_iterations=50,  # 增加迭代次数，确保对局能完成（最多可能需要50步才能分出胜负）
-        handle_parsing_errors=handle_parsing_error,  # 使用自定义错误处理
-        return_intermediate_steps=True,  # 返回中间步骤以便调试
-        max_execution_time=600,  # 设置最大执行时间10分钟
-        early_stopping_method="force",  # 强制停止方法
+        agent = agent,
+        tools = tools,
+        verbose=False, # 减少完整输出 减少噪音
+        max_iterations=50,
+        handle_parsing_errors=handle_parsing_error,
+        return_intermediate_steps=True, #保存返回中间步骤.用于下一调试
+        max_execution_time=600,
+        early_stopping_method="force",
     )
     return executor
+
