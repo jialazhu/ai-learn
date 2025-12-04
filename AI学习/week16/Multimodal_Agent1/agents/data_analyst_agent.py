@@ -125,9 +125,10 @@ class DataAnalystAgent(BaseAgent):
             return {"error": "No image provided for analysis"}
         
         try:
-            # 1. 初始化格式变量
+            # 读取图片并检测格式
+            image_data = None
             image_format = "jpeg"  # 默认格式
-
+            
             if image_base64:
                 # 如果提供了base64编码的图片
                 # 检查是否包含data URI前缀
@@ -145,7 +146,7 @@ class DataAnalystAgent(BaseAgent):
                     # 提取base64数据部分
                     if "," in image_base64:
                         image_base64 = image_base64.split(",", 1)[1]
-
+                
                 try:
                     image_data = base64.b64decode(image_base64)
                 except Exception as e:
@@ -169,10 +170,10 @@ class DataAnalystAgent(BaseAgent):
                 except Exception as e:
                     logger.error(f"Error reading image file: {str(e)}")
                     return {"error": f"无法读取图片文件: {str(e)}"}
-
+            
             if not image_data:
                 return {"error": "无法获取图片数据"}
-
+            
             # 通过文件头检测实际格式（更可靠）
             if image_data.startswith(b'\x89PNG\r\n\x1a\n'):
                 image_format = "png"
@@ -182,6 +183,7 @@ class DataAnalystAgent(BaseAgent):
                 image_format = "gif"
             elif image_data.startswith(b'RIFF') and b'WEBP' in image_data[:12]:
                 image_format = "webp"
+            
             # 转换为base64用于API调用
             image_base64_str = base64.b64encode(image_data).decode('utf-8')
             
@@ -217,37 +219,29 @@ class DataAnalystAgent(BaseAgent):
                         ]
                     )
                 ]
+                logger.info(f"Analyzing image with format: {image_format}, size: {len(image_data)} bytes")
                 response = self.llm.invoke(messages)
             except Exception as e:
-                # 如果多模态格式不支持，尝试使用文本描述
-                logger.warning(f"Multimodal format not supported, using text description: {str(e)}")
-                messages = [
-                    SystemMessage(content=(
-                        "你是一位专业的数据分析师，擅长分析各种图表和数据可视化。"
-                        "请仔细分析用户提供的图表，描述：\n"
-                        "1. 图表的类型和结构\n"
-                        "2. 数据的主要趋势和模式\n"
-                        "3. 关键数据点和异常值\n"
-                        "4. 可能的洞察和结论\n"
-                        "请用中文详细描述。"
-                    )),
-                    HumanMessage(content=(
-                        "请详细分析用户上传的图表图片，包括数据趋势、关键发现和洞察。"
-                        "图片已上传，请根据图片内容进行分析。"
-                    ))
-                ]
-                response = self.llm.invoke(messages)
+                # 如果多模态格式不支持，记录详细错误并返回
+                error_msg = str(e)
+                logger.error(f"Multimodal format not supported: {error_msg}", exc_info=True)
+                return {
+                    "error": f"多模态分析失败: {error_msg}。请检查：1) 模型是否支持视觉输入 2) API配置是否正确 3) 图片格式是否支持",
+                    "analysis": ""
+                }
+            
             analysis = response.content
             
-            logger.info(f"Chart analysis completed")
+            logger.info(f"Chart analysis completed successfully")
             
             return {
                 "analysis": analysis,
-                "image_path": image_path or "base64_image"
+                "image_path": image_path or "base64_image",
+                "image_format": image_format
             }
             
         except Exception as e:
-            logger.error(f"Error analyzing chart: {str(e)}")
+            logger.error(f"Error analyzing chart: {str(e)}", exc_info=True)
             return {
                 "error": f"分析图表时出错: {str(e)}",
                 "analysis": ""
@@ -377,7 +371,15 @@ class DataAnalystAgent(BaseAgent):
                 }
             }
             chart_result = self._handle_chart_analysis_task(chart_task)
-            chart_analysis = chart_result.get("analysis", "")
+            if "error" in chart_result:
+                error_msg = chart_result.get("error", "未知错误")
+                logger.error(f"Chart analysis failed: {error_msg}")
+                # 如果图表分析失败，记录错误但继续处理（如果有CSV数据）
+                chart_analysis = f"[图表分析失败: {error_msg}]"
+            else:
+                chart_analysis = chart_result.get("analysis", "")
+                if not chart_analysis:
+                    logger.warning("Chart analysis returned empty result")
         
         # 处理CSV数据
         # 如果csv_data是字符串且看起来像分析结果（包含中文或较长的文本），直接使用
